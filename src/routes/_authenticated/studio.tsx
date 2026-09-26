@@ -91,6 +91,7 @@ function Studio() {
       const videoOnly = new MediaStream(camStream.current.getVideoTracks());
       const conn = await client.realtime.connect(videoOnly, {
         model: models.realtime("lucy-2.5"),
+        preferredVideoCodec: "vp8",
         onRemoteStream: (stream: MediaStream) => {
           remoteStream.current = stream;
           if (remoteRef.current) {
