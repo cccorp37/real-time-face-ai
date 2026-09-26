@@ -47,7 +47,7 @@ function Studio() {
   const recorder = useRef<MediaRecorder | null>(null);
 
   useEffect(() => {
-    if (!selected && avatars.length) setSelected(profile?.active_avatar_id ?? avatars[0].id);
+    if (!selected && avatars.length) setSelected(profile?.active_avatar_id ?? avatars[0]!.id);
   }, [avatars, profile, selected]);
 
   useEffect(() => () => void stopAll(), []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -67,7 +67,7 @@ function Studio() {
   }
 
   async function goLive() {
-    if (!selected) return toast.error("Choisissez un avatar.");
+    if (!selected) { toast.error("Choisissez un avatar."); return; }
     if (!camStream.current) await openCamera();
     if (!camStream.current) return;
     setStatus("connecting");

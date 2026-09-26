@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/avatars")({
 function toBase64(file: File) {
   return new Promise<string>((res, rej) => {
     const r = new FileReader();
-    r.onload = () => res(String(r.result).split(",")[1]);
+    r.onload = () => res(String(r.result).split(",")[1] ?? "");
     r.onerror = rej;
     r.readAsDataURL(file);
   });
@@ -44,8 +44,8 @@ function AvatarsPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!file) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) return toast.error("Format JPG, PNG ou WEBP");
-    if (file.size > 6 * 1024 * 1024) return toast.error("6 Mo maximum");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { toast.error("Format JPG, PNG ou WEBP"); return; }
+    if (file.size > 6 * 1024 * 1024) { toast.error("6 Mo maximum"); return; }
     setBusy(true);
     try {
       await upload({ data: { name: name || "Avatar", contentType: file.type as "image/png", base64: await toBase64(file) } });

@@ -48,7 +48,7 @@ function AuthPage() {
             options: { emailRedirectTo: `${window.location.origin}/studio` },
           });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     if (mode === "up") toast.success("Vérifiez votre e-mail pour confirmer votre compte.");
   }
 

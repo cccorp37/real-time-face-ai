@@ -30,7 +30,7 @@ function SettingsPage() {
   async function update(values: { display_name?: string; consent_accepted_at?: string | null }) {
     if (!profile) return;
     const { error } = await supabase.from("profiles").update(values).eq("user_id", profile.user_id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Enregistré");
     qc.invalidateQueries({ queryKey: ["profile"] });
   }
