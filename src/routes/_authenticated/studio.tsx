@@ -89,7 +89,7 @@ function Studio() {
         if (r.ok) image = await r.blob();
       }
       const videoOnly = new MediaStream(camStream.current.getVideoTracks());
-      const conn = await client.realtime.connect(videoOnly, {
+      const connectPromise = client.realtime.connect(videoOnly, {
         model: models.realtime("lucy-2.5"),
         preferredVideoCodec: "vp8",
         onRemoteStream: (stream: MediaStream) => {
@@ -103,6 +103,16 @@ function Studio() {
           prompt: { text: "Substitute the face with the one in the reference image, keep expressions and head movements", enhance: false },
           ...(image ? { image } : {}),
         },
+      });
+      let timedOut = false;
+      const conn = await Promise.race([
+        connectPromise,
+        new Promise<never>((_, rej) =>
+          setTimeout(() => { timedOut = true; rej(new Error("NETWORK_TIMEOUT")); }, 25000),
+        ),
+      ]).catch((err) => {
+        if (timedOut) connectPromise.then((c) => c.disconnect()).catch(() => {});
+        throw err;
       });
       rt.current = conn;
       conn.on("error", (err) => console.error("[Decart] error", err));
@@ -130,8 +140,11 @@ function Studio() {
       }, 5000);
     } catch (e) {
       console.error("[Decart] connect failed", e);
-      const msg = e instanceof Error ? e.message : String(e);
-      toast.error(`Échec de connexion au live : ${msg}`);
+      const raw = e instanceof Error ? e.message : String(e);
+      const msg = /NETWORK_TIMEOUT|pc connection|ice/i.test(raw)
+        ? "La connexion vidéo n'a pas pu s'établir. Votre réseau bloque peut-être le flux temps réel : essayez un autre réseau (Wi-Fi / 4G), désactivez VPN ou bloqueur, puis réessayez. Vos points n'ont été débités que pour les quelques secondes d'essai."
+        : `Échec de connexion au live : ${raw}`;
+      toast.error(msg, { duration: 10000 });
       rt.current?.disconnect();
       rt.current = null;
       if (sessionId.current) {
