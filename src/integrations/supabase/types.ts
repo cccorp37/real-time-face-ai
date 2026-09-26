@@ -14,16 +14,198 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      avatars: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          status: string
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string
+          status?: string
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          status?: string
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      live_sessions: {
+        Row: {
+          avatar_id: string | null
+          ended_at: string | null
+          id: string
+          last_billed_at: string
+          resolution: string
+          seconds_billed: number
+          started_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          avatar_id?: string | null
+          ended_at?: string | null
+          id?: string
+          last_billed_at?: string
+          resolution?: string
+          seconds_billed?: number
+          started_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          avatar_id?: string | null
+          ended_at?: string | null
+          id?: string
+          last_billed_at?: string
+          resolution?: string
+          seconds_billed?: number
+          started_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_sessions_avatar_id_fkey"
+            columns: ["avatar_id"]
+            isOneToOne: false
+            referencedRelation: "avatars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      point_transactions: {
+        Row: {
+          created_at: string
+          delta: number
+          id: string
+          session_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          id?: string
+          session_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          id?: string
+          session_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "point_transactions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      point_wallets: {
+        Row: {
+          balance: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          active_avatar_id: string | null
+          consent_accepted_at: string | null
+          created_at: string
+          display_name: string | null
+          is_vip: boolean
+          user_id: string
+          vip_expires_at: string | null
+        }
+        Insert: {
+          active_avatar_id?: string | null
+          consent_accepted_at?: string | null
+          created_at?: string
+          display_name?: string | null
+          is_vip?: boolean
+          user_id: string
+          vip_expires_at?: string | null
+        }
+        Update: {
+          active_avatar_id?: string | null
+          consent_accepted_at?: string | null
+          created_at?: string
+          display_name?: string | null
+          is_vip?: boolean
+          user_id?: string
+          vip_expires_at?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      bill_live_session: {
+        Args: { _end?: boolean; _session_id: string }
+        Returns: Json
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      start_live_session: { Args: { _avatar_id: string }; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +332,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
