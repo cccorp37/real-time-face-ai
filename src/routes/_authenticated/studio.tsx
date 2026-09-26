@@ -52,11 +52,18 @@ function Studio() {
 
   useEffect(() => () => void stopAll(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (status === "live" && remoteRef.current && remoteStream.current) {
+      remoteRef.current.srcObject = remoteStream.current;
+      remoteRef.current.play().catch(() => {});
+    }
+  }, [status]);
+
   async function openCamera() {
     try {
       const s = await navigator.mediaDevices.getUserMedia({
-        video: { width: 1280, height: 704, frameRate: 25, facingMode: "user" },
-        audio: true,
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 }, facingMode: "user" },
+        audio: false,
       });
       camStream.current = s;
       if (localRef.current) localRef.current.srcObject = s;
@@ -77,19 +84,34 @@ function Studio() {
       const { createDecartClient, models } = await import("@decartai/sdk");
       const client = createDecartClient({ apiKey: ticket.clientKey });
       let image: Blob | undefined;
-      if (ticket.avatarUrl) image = await (await fetch(ticket.avatarUrl)).blob();
-      rt.current = await client.realtime.connect(camStream.current, {
+      if (ticket.avatarUrl) {
+        const r = await fetch(ticket.avatarUrl);
+        if (r.ok) image = await r.blob();
+      }
+      const videoOnly = new MediaStream(camStream.current.getVideoTracks());
+      const conn = await client.realtime.connect(videoOnly, {
         model: models.realtime("lucy-2.5"),
-        mirror: "auto",
         onRemoteStream: (stream: MediaStream) => {
           remoteStream.current = stream;
-          if (remoteRef.current) remoteRef.current.srcObject = stream;
+          if (remoteRef.current) {
+            remoteRef.current.srcObject = stream;
+            remoteRef.current.play().catch(() => {});
+          }
         },
         initialState: {
-          prompt: { text: "Replace the person's face and identity with the person in the reference image, keep expressions and head movements", enhance: true },
+          prompt: { text: "Substitute the face with the one in the reference image, keep expressions and head movements", enhance: false },
           ...(image ? { image } : {}),
         },
-      } as never);
+      });
+      rt.current = conn;
+      conn.on("error", (err) => console.error("[Decart] error", err));
+      conn.on("sessionEnded", () => {
+        if (sessionId.current) { toast.warning("Session terminée par le service."); stopLive(); }
+      });
+      conn.on("connectionChange", (s) => {
+        console.info("[Decart] state", s);
+        if (s === "disconnected" && sessionId.current) stopLive();
+      });
       setStatus("live");
       setElapsed(0);
       timer.current = window.setInterval(async () => {
@@ -106,9 +128,18 @@ function Studio() {
         }
       }, 5000);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Échec de connexion");
+      console.error("[Decart] connect failed", e);
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(`Échec de connexion au live : ${msg}`);
       rt.current?.disconnect();
       rt.current = null;
+      if (sessionId.current) {
+        try {
+          const r = await beat({ data: { sessionId: sessionId.current, end: true } });
+          qc.setQueryData(walletQuery.queryKey, r.balance);
+        } catch { /* ignore */ }
+        sessionId.current = null;
+      }
       setStatus("camera");
     }
   }
