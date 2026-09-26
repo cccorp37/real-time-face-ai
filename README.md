@@ -1,14 +1,16 @@
-# Welcome to your Lovable project
+# AVYSWAP-CAM
+
+génére-moi un cahier de charge technique uniquement pour le développement web d'une application telle que chapam ou FaceVo-Live qui me permet d'utiliser l'API de decart Ai pour le changement de visage en direct (face swap Live (caméra réel+Avatar) active Lovable cloud pour l'infrastructure Backend complète
 
 This project was built with [Lovable](https://lovable.dev).
 
 ## Build with Lovable
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/e568c699-48cb-427a-8830-29bfde919759).
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
 ## Development
 
@@ -20,10 +22,3 @@ cd <repository-name>
 npm i
 npm run dev
 ```
-
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
