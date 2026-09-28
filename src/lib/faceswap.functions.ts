@@ -88,7 +88,9 @@ export const startLive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ avatarId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const apiKey = process.env["DECART_API_KEY"];
+    const { supabaseAdmin: sa } = await import("@/integrations/supabase/client.server");
+    const { data: setting } = await sa.from("app_settings").select("value").eq("key", "decart_api_key").maybeSingle();
+    const apiKey = setting?.value ?? process.env["DECART_API_KEY"];
     if (!apiKey) throw new Error("Service de transformation non configuré.");
     const { data: sessionId, error } = await context.supabase.rpc("start_live_session", {
       _avatar_id: data.avatarId,
@@ -136,5 +138,5 @@ export const heartbeatLive = createServerFn({ method: "POST" })
       _end: data.end ?? false,
     });
     if (error) throw new Error("Session invalide");
-    return res as { active: boolean; balance: number; charged?: number };
+    return res as { active: boolean; balance: number; charged?: number; unlimited?: boolean };
   });
