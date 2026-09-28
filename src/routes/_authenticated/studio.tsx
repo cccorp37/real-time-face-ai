@@ -3,10 +3,13 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Circle, Loader2, Play, Square, Download, Camera } from "lucide-react";
+import {
+  Circle, Loader2, Play, Square, Download, Camera, Eye, EyeOff, Maximize, Minimize,
+  RectangleHorizontal, RectangleVertical, Square as SquareIcon, ScanFace,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { listAvatars, startLive, heartbeatLive } from "@/lib/faceswap.functions";
-import { profileQuery, walletQuery } from "@/lib/queries";
+import { profileQuery, walletQuery, adminQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/_authenticated/studio")({
   head: () => ({
@@ -45,6 +48,17 @@ function Studio() {
   const sessionId = useRef<string | null>(null);
   const timer = useRef<number | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const { data: isAdmin } = useQuery(adminQuery);
+  const [shape, setShape] = useState<"landscape" | "square" | "portrait">("landscape");
+  const [showCam, setShowCam] = useState(true);
+  const [isFs, setIsFs] = useState(false);
+
+  useEffect(() => {
+    const on = () => setIsFs(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", on);
+    return () => document.removeEventListener("fullscreenchange", on);
+  }, []);
 
   useEffect(() => {
     if (!selected && avatars.length) setSelected(profile?.active_avatar_id ?? avatars[0]!.id);
@@ -203,47 +217,92 @@ function Studio() {
   }
 
   const needsConsent = profile && !profile.consent_accepted_at;
+  const premium = !!isAdmin || !!profile?.is_vip;
+  const shapeClass = shape === "square" ? "aspect-square max-w-[640px]" : shape === "portrait" ? "aspect-[9/16] max-w-[420px]" : "aspect-video";
+
+  async function toggleFullscreen() {
+    if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
+    else await stageRef.current?.requestFullscreen().catch(() => toast.error("Plein écran indisponible sur cet appareil."));
+  }
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
       <section>
-        <div className="relative aspect-video overflow-hidden rounded-3xl border border-border bg-card">
-          <video ref={remoteRef} autoPlay playsInline className={`absolute inset-0 h-full w-full object-cover ${status === "live" ? "" : "hidden"}`} />
-          <video
-            ref={localRef}
-            autoPlay
-            playsInline
-            muted
-            className={
-              status === "live"
-                ? "absolute bottom-3 right-3 h-28 w-44 -scale-x-100 rounded-xl border border-border object-cover"
-                : "absolute inset-0 h-full w-full -scale-x-100 object-cover"
-            }
-          />
-          {status === "idle" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-center">
-              <Camera className="h-10 w-10 text-muted-foreground" />
-              <Button onClick={openCamera} className="rounded-full">Activer la caméra</Button>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div className="flex rounded-full border border-border bg-card p-1">
+            {([
+              ["landscape", "Rectangle", RectangleHorizontal],
+              ["square", "Carré", SquareIcon],
+              ["portrait", "Portrait", RectangleVertical],
+            ] as const).map(([k, label, Icon]) => (
+              <button
+                key={k}
+                onClick={() => setShape(k)}
+                className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${shape === k ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+              >
+                <Icon className="h-3.5 w-3.5" /> {label}
+              </button>
+            ))}
+          </div>
+          <Button size="sm" variant="secondary" className="rounded-full" onClick={() => setShowCam((v) => !v)}>
+            {showCam ? <EyeOff className="mr-1 h-4 w-4" /> : <Eye className="mr-1 h-4 w-4" />}
+            {showCam ? "Masquer ma caméra" : "Afficher ma caméra"}
+          </Button>
+          <Button size="sm" variant="secondary" className="rounded-full" onClick={toggleFullscreen}>
+            {isFs ? <Minimize className="mr-1 h-4 w-4" /> : <Maximize className="mr-1 h-4 w-4" />}
+            {isFs ? "Quitter plein écran" : "Plein écran"}
+          </Button>
+        </div>
+
+        <div className="flex flex-col gap-3 md:flex-row md:items-start">
+          <div
+            ref={stageRef}
+            className={`relative mx-auto w-full overflow-hidden rounded-3xl border border-border bg-card ${isFs ? "flex items-center justify-center bg-background" : shapeClass}`}
+          >
+            <div className={`relative ${isFs ? `h-full max-h-screen ${shape === "landscape" ? "aspect-video" : shape === "square" ? "aspect-square" : "aspect-[9/16]"}` : "absolute inset-0"}`}>
+              <video ref={remoteRef} autoPlay playsInline className={`absolute inset-0 h-full w-full object-cover ${status === "live" ? "" : "hidden"}`} />
+              {status !== "live" && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center text-sm text-muted-foreground">
+                  {status === "connecting" ? (
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  ) : status === "idle" ? (
+                    <>
+                      <Camera className="h-10 w-10" />
+                      <Button onClick={openCamera} className="rounded-full">Activer la caméra</Button>
+                    </>
+                  ) : (
+                    <>
+                      <ScanFace className="h-10 w-10" />
+                      Le résultat du face swap s'affichera ici.
+                    </>
+                  )}
+                </div>
+              )}
+              {status === "live" && (
+                <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-background/80 px-3 py-1 text-sm font-semibold">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-destructive" /> LIVE · {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, "0")}
+                </div>
+              )}
+              {status === "live" && !premium && (
+                <span className="absolute bottom-3 left-3 text-xs font-bold opacity-60">FaceMorph</span>
+              )}
+              {isFs && (
+                <button onClick={toggleFullscreen} aria-label="Quitter le plein écran" className="absolute right-3 top-3 rounded-full bg-background/80 p-2">
+                  <Minimize className="h-4 w-4" />
+                </button>
+              )}
             </div>
-          )}
-          {status === "connecting" && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/60">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          )}
-          {status === "live" && (
-            <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-background/80 px-3 py-1 text-sm font-semibold">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-destructive" /> LIVE · {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, "0")}
-            </div>
-          )}
-          {status === "live" && !profile?.is_vip && (
-            <span className="absolute bottom-3 left-3 text-xs font-bold opacity-60">FaceMorph</span>
-          )}
+          </div>
+
+          <div className={`${showCam && status !== "idle" ? "" : "hidden"} w-40 shrink-0 self-end md:self-start`}>
+            <p className="mb-1 text-xs text-muted-foreground">Ma caméra</p>
+            <video ref={localRef} autoPlay playsInline muted className="aspect-[3/4] w-full -scale-x-100 rounded-2xl border border-border object-cover" />
+          </div>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
           {status !== "live" ? (
-            <Button size="lg" className="rounded-full" onClick={goLive} disabled={status === "connecting" || !selected || !!needsConsent || balance <= 0}>
+            <Button size="lg" className="rounded-full" onClick={goLive} disabled={status === "connecting" || !selected || !!needsConsent || (!isAdmin && balance <= 0)}>
               <Play className="mr-1 h-4 w-4" /> Démarrer le swap
             </Button>
           ) : (
@@ -264,7 +323,9 @@ function Studio() {
               </a>
             </Button>
           )}
-          <span className="text-sm text-muted-foreground">1 point / seconde · {balance} restants</span>
+          <span className="text-sm text-muted-foreground">
+            {isAdmin ? "Accès Premium illimité · sans filigrane" : `1 point / seconde · ${balance} restants`}
+          </span>
         </div>
         {needsConsent && (
           <p className="mt-3 text-sm text-accent">

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAvatarsRouteImport } from './routes/_authenticated/avatars'
 import { Route as AuthenticatedPointsRouteImport } from './routes/_authenticated/points'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -30,6 +31,11 @@ const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAvatarsRoute = AuthenticatedAvatarsRouteImport.update({
   id: '/avatars',
@@ -55,6 +61,7 @@ const AuthenticatedStudioRoute = AuthenticatedStudioRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/avatars': typeof AuthenticatedAvatarsRoute
   '/points': typeof AuthenticatedPointsRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -63,6 +70,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/avatars': typeof AuthenticatedAvatarsRoute
   '/points': typeof AuthenticatedPointsRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -73,6 +81,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/avatars': typeof AuthenticatedAvatarsRoute
   '/_authenticated/points': typeof AuthenticatedPointsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -80,14 +89,17 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/avatars' | '/points' | '/settings' | '/studio'
+  fullPaths:
+    '/' | '/auth' | '/admin' | '/avatars' | '/points' | '/settings' | '/studio'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/avatars' | '/points' | '/settings' | '/studio'
+  to:
+    '/' | '/auth' | '/admin' | '/avatars' | '/points' | '/settings' | '/studio'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/admin'
     | '/_authenticated/avatars'
     | '/_authenticated/points'
     | '/_authenticated/settings'
@@ -123,6 +135,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/avatars': {
       id: '/_authenticated/avatars'
       path: '/avatars'
@@ -155,6 +174,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAvatarsRoute: typeof AuthenticatedAvatarsRoute
   AuthenticatedPointsRoute: typeof AuthenticatedPointsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -162,6 +182,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAvatarsRoute: AuthenticatedAvatarsRoute,
   AuthenticatedPointsRoute: AuthenticatedPointsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
