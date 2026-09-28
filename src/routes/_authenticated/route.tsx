@@ -1,8 +1,8 @@
 import { createFileRoute, Outlet, redirect, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Coins, LogOut, ScanFace, Users, Wallet, Settings } from "lucide-react";
+import { Coins, LogOut, ScanFace, Users, Wallet, Settings, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { walletQuery } from "@/lib/queries";
+import { walletQuery, adminQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -23,6 +23,7 @@ const NAV = [
 
 function AppLayout() {
   const { data: balance } = useQuery(walletQuery);
+  const { data: isAdmin } = useQuery(adminQuery);
   const qc = useQueryClient();
   const navigate = useNavigate();
   return (
@@ -45,8 +46,13 @@ function AppLayout() {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-3">
+            {isAdmin && (
+              <Link to="/admin" aria-label="Administration" className="flex items-center gap-1 rounded-full border border-primary/40 px-3 py-1 text-sm font-semibold text-primary">
+                <ShieldCheck className="h-4 w-4" /> Admin
+              </Link>
+            )}
             <Link to="/points" className="flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-sm font-semibold text-primary">
-              <Coins className="h-4 w-4" /> {balance ?? "…"}
+              <Coins className="h-4 w-4" /> {isAdmin ? "∞" : balance ?? "…"}
             </Link>
             <button
               aria-label="Se déconnecter"
