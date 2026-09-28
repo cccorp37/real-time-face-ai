@@ -108,9 +108,11 @@ function Studio() {
         preferredVideoCodec: "vp8",
         onRemoteStream: (stream: MediaStream) => {
           remoteStream.current = stream;
-          if (remoteRef.current) {
-            remoteRef.current.srcObject = stream;
-            remoteRef.current.play().catch(() => {});
+          const el = remoteRef.current;
+          if (el) {
+            el.muted = true;
+            el.srcObject = stream;
+            el.play().catch((err) => console.warn("[Decart] play blocked", err));
           }
         },
         initialState: {
@@ -262,7 +264,14 @@ function Studio() {
             className={`relative mx-auto w-full overflow-hidden rounded-3xl border border-border bg-card ${isFs ? "flex items-center justify-center bg-background" : shapeClass}`}
           >
             <div className={`relative ${isFs ? `h-full max-h-screen ${shape === "landscape" ? "aspect-video" : shape === "square" ? "aspect-square" : "aspect-[9/16]"}` : "absolute inset-0"}`}>
-              <video ref={remoteRef} autoPlay playsInline className={`absolute inset-0 h-full w-full object-cover ${status === "live" ? "" : "hidden"}`} />
+              <video
+                ref={remoteRef}
+                autoPlay
+                playsInline
+                muted
+                onClick={() => remoteRef.current?.play().catch(() => {})}
+                className={`absolute inset-0 h-full w-full object-cover ${status === "live" ? "" : "hidden"}`}
+              />
               {status !== "live" && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center text-sm text-muted-foreground">
                   {status === "connecting" ? (
