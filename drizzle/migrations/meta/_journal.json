@@ -8,6 +8,13 @@
       "when": 1790393824853,
       "tag": "0000_faceswap_core",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790565123635,
+      "tag": "0001_admin_premium_and_settings",
+      "breakpoints": true
     }
   ]
 }
