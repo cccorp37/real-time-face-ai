@@ -142,7 +142,9 @@ function Studio() {
       timer.current = window.setInterval(async () => {
         setElapsed((e) => e + 5);
         try {
-          const r = await beat({ data: { sessionId: sessionId.current! } });
+          const sid = sessionId.current;
+          if (!sid) return;
+          const r = await beat({ data: { sessionId: sid } });
           qc.setQueryData(walletQuery.queryKey, r.balance);
           if (!r.active) {
             toast.warning("Solde épuisé — session terminée.");
